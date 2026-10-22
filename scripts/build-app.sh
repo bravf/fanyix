@@ -34,4 +34,6 @@ codesign --verify --deep --strict "$app"
 if [[ "$signing_identity" == "-" ]]; then
   echo "注意：当前使用临时签名，重新构建后可能需要移除旧的辅助功能条目并重新授权。可通过 CODE_SIGN_IDENTITY 指定已安装的代码签名身份。"
 fi
+ditto -c -k --sequesterRsrc --keepParent "$app" "$PWD/dist/FanyiX.zip"
 echo "已构建：$app"
+echo "下载包：$PWD/dist/FanyiX.zip"

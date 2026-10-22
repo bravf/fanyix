@@ -6,7 +6,7 @@ FanyiX 是一款 macOS 选中文字翻译工具。在网页、聊天或文档中
 
 当前安装包适用于 **Apple 芯片（M 系列）Mac，macOS 13 及以上**。使用前，请先在电脑上安装并登录 **Codex、Claude、Pi 中的任意一个命令行工具**，确认它可以正常使用。
 
-1. 获取 `FanyiX.app`（项目中的位置为 `dist/FanyiX.app`）；如果收到的是 ZIP，先解压。
+1. [下载 FanyiX.zip](https://github.com/bravf/fanyix/raw/refs/heads/main/dist/FanyiX.zip)，解压得到 `FanyiX.app`。
 2. 将 `FanyiX.app` 拖到「应用程序」，从 Finder 双击打开，菜单栏会出现 **F 图标**。
 3. 在「系统设置 → 隐私与安全性 → 辅助功能」中允许 **FanyiX**。如果列表中没有，点击 `+` 添加「应用程序」中的 FanyiX。
 4. 点击菜单栏 **F 图标 → 设置 → Agent 与模型**，选择要使用的 Agent 和模型。应用会自动查找本机已安装的 Agent。
