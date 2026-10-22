@@ -8,7 +8,7 @@ public struct AgentLaunch {
         self.executable = executable; self.arguments = arguments; self.environment = environment
     }
 
-    public static func resolve(_ backend: Backend, override: String = "") throws -> AgentLaunch {
+    public static func resolve(_ backend: Backend, override: String = "", workspaceDirectory: URL = AgentWorkspace.directory) throws -> AgentLaunch {
         let manager = FileManager.default
         let home = manager.homeDirectoryForCurrentUser
         var environment = ProcessInfo.processInfo.environment
@@ -46,7 +46,9 @@ public struct AgentLaunch {
         case .codex:
             arguments = ["--disable", "shell_tool", "--disable", "unified_exec", "--disable", "multi_agent", "app-server", "--stdio"]
         case .claude:
-            arguments = ["--print", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose", "--tools", "", "--strict-mcp-config", "--mcp-config", "{\"mcpServers\":{}}", "--no-session-persistence", "--permission-mode", "dontAsk", "--settings", "{\"disableAllHooks\":true}"]
+            // CLAUDE.md 导入只是项目上下文，容易被编码助手角色和旧译文带偏。
+            // 直接以同一份可编辑文件定义翻译角色；每轮仍只发送原文，不拼接规则。
+            arguments = ["--print", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose", "--system-prompt-file", workspaceDirectory.appendingPathComponent("AGENTS.md").path, "--tools", "", "--strict-mcp-config", "--mcp-config", "{\"mcpServers\":{}}", "--no-session-persistence", "--permission-mode", "dontAsk", "--settings", "{\"disableAllHooks\":true}"]
         case .pi:
             arguments = ["--mode", "rpc", "--no-session", "--no-tools", "--no-mcp", "--no-extensions", "--no-skills", "--no-prompt-templates"]
         }

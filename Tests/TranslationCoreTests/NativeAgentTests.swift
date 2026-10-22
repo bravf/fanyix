@@ -67,6 +67,24 @@ final class NativeAgentTests: XCTestCase {
         }
     }
 
+    func testClaudeLaunchLoadsEditableRulesAsSystemPromptFromActualWorkspace() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("FanyiX 中文规则 \(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        _ = try AgentWorkspace.prepare(directory: directory)
+        for backend in Backend.allCases {
+            let launch = try AgentLaunch.resolve(backend, override: try fixture().path, workspaceDirectory: directory)
+            if backend == .claude {
+                let index = try XCTUnwrap(launch.arguments.firstIndex(of: "--system-prompt-file"))
+                XCTAssertEqual(launch.arguments[index + 1], directory.appendingPathComponent("AGENTS.md").path)
+                XCTAssertFalse(launch.arguments.contains("--system-prompt"))
+                let tools = try XCTUnwrap(launch.arguments.firstIndex(of: "--tools"))
+                XCTAssertEqual(launch.arguments[tools + 1], "")
+            } else {
+                XCTAssertFalse(launch.arguments.contains("--system-prompt-file"))
+            }
+        }
+    }
+
     @MainActor
     func testEditedInstructionsStartFreshSessionAndRemainOnDisk() async throws {
         for backend in Backend.allCases {

@@ -101,7 +101,7 @@ public final class NativeAgent {
         let instructions = try AgentWorkspace.prepare(directory: workspaceDirectory)
         if let wire, !wire.closed, backend == configuration.backend, overridePath == path, modelFingerprint == configuration.selectedModel, instructionsFingerprint == instructions { return }
         close()
-        var launch = try launchOverride ?? AgentLaunch.resolve(configuration.backend, override: path)
+        var launch = try launchOverride ?? AgentLaunch.resolve(configuration.backend, override: path, workspaceDirectory: workspaceDirectory)
         if launchOverride == nil, configuration.backend == .claude, !configuration.selectedModel.isEmpty {
             launch = AgentLaunch(executable: launch.executable, arguments: launch.arguments + ["--model", configuration.selectedModel], environment: launch.environment)
         }

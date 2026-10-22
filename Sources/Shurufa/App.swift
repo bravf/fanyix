@@ -424,12 +424,13 @@ enum ShurufaApp {
             if index + 2 < args.count { config.models[backend.rawValue] = args[index + 2] }
             var pid: Int32?
             do {
-                for source in ["我今天可能会晚点到。", "Could we meet at ten tomorrow morning?"] {
+                let sources = index + 3 < args.count ? Array(args.dropFirst(index + 3)) : ["我今天可能会晚点到。", "Could we meet at ten tomorrow morning?"]
+                for source in sources {
                     let start = Date()
                     let output = try await agent.translate(source, configuration: config)
                     if let pid, pid != agent.processIdentifier { throw TranslationError.message("Agent 进程未复用。") }
                     pid = agent.processIdentifier
-                    let result: [String: Any] = ["backend": backend.rawValue, "translation": output, "seconds": Date().timeIntervalSince(start), "pid": pid ?? 0, "executable": agent.executablePath ?? ""]
+                    let result: [String: Any] = ["backend": backend.rawValue, "source": source, "translation": output, "seconds": Date().timeIntervalSince(start), "pid": pid ?? 0, "executable": agent.executablePath ?? ""]
                     let data = try JSONSerialization.data(withJSONObject: result, options: .sortedKeys)
                     print(String(decoding: data, as: UTF8.self))
                 }
