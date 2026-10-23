@@ -21,8 +21,8 @@ final class TranslationHistoryModel: ObservableObject {
         history.begin(TranslationRecord(id: id, source: source, backend: configuration.backend, model: configuration.selectedModel))
         persist()
     }
-    func finish(id: UUID, translation: String, status: TranslationRecordStatus, detail: String) {
-        if history.finish(id, translation: translation, status: status, detail: detail) { persist() }
+    func finish(id: UUID, translation: String, notes: [TranslationNote] = [], status: TranslationRecordStatus, detail: String) {
+        if history.finish(id, translation: translation, notes: notes, status: status, detail: detail) { persist() }
     }
     func remove(_ id: UUID) { history.remove(id); persist() }
     func clearCompleted() { history.clearCompleted(); persist() }

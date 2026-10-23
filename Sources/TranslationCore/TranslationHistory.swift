@@ -21,14 +21,31 @@ public struct TranslationRecord: Identifiable, Codable, Equatable {
     public let backend: Backend
     public let model: String
     public var translation: String
+    public var notes: [TranslationNote]
     public var status: TranslationRecordStatus
     public var detail: String
     public var completedAt: Date?
 
     public init(id: UUID = UUID(), createdAt: Date = Date(), source: String, backend: Backend, model: String,
-                translation: String = "", status: TranslationRecordStatus = .translating, detail: String = "", completedAt: Date? = nil) {
+                translation: String = "", notes: [TranslationNote] = [], status: TranslationRecordStatus = .translating, detail: String = "", completedAt: Date? = nil) {
         self.id = id; self.createdAt = createdAt; self.source = source; self.backend = backend; self.model = model
-        self.translation = translation; self.status = status; self.detail = detail; self.completedAt = completedAt
+        self.translation = translation; self.notes = notes; self.status = status; self.detail = detail; self.completedAt = completedAt
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, createdAt, source, backend, model, translation, notes, status, detail, completedAt }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(UUID.self, forKey: .id)
+        createdAt = try values.decode(Date.self, forKey: .createdAt)
+        source = try values.decode(String.self, forKey: .source)
+        backend = try values.decode(Backend.self, forKey: .backend)
+        model = try values.decode(String.self, forKey: .model)
+        translation = try values.decodeIfPresent(String.self, forKey: .translation) ?? ""
+        notes = try values.decodeIfPresent([TranslationNote].self, forKey: .notes) ?? []
+        status = try values.decode(TranslationRecordStatus.self, forKey: .status)
+        detail = try values.decodeIfPresent(String.self, forKey: .detail) ?? ""
+        completedAt = try values.decodeIfPresent(Date.self, forKey: .completedAt)
     }
 }
 
@@ -45,9 +62,9 @@ public struct TranslationHistory {
         records.insert(record, at: 0)
         if records.count > Self.maximumRecords { records.removeLast(records.count - Self.maximumRecords) }
     }
-    @discardableResult public mutating func finish(_ id: UUID, translation: String, status: TranslationRecordStatus, detail: String, at date: Date = Date()) -> Bool {
+    @discardableResult public mutating func finish(_ id: UUID, translation: String, notes: [TranslationNote] = [], status: TranslationRecordStatus, detail: String, at date: Date = Date()) -> Bool {
         guard status != .translating, let index = records.firstIndex(where: { $0.id == id }), records[index].status == .translating else { return false }
-        records[index].translation = translation; records[index].status = status
+        records[index].translation = translation; records[index].notes = notes; records[index].status = status
         records[index].detail = detail; records[index].completedAt = date
         return true
     }

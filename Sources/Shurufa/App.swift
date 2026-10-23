@@ -22,7 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     private let hotKey = HotKey()
     private let agentClient = AgentClient()
     private let captureSelection: () async throws -> SelectionSnapshot?
-    private let translateText: ((String, Configuration) async throws -> String)?
+    private let translateText: ((String, Configuration) async throws -> TranslationResult)?
     private let translationHistory: TranslationHistoryModel
     private lazy var overlay = TranslationOverlay(history: translationHistory)
     private let selectionMonitor = SelectionMonitor()
@@ -35,7 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
     init(historyFile: URL? = TranslationHistory.file,
          captureSelection: @escaping () async throws -> SelectionSnapshot? = { try await SelectionAccess.capture() },
-         translateText: ((String, Configuration) async throws -> String)? = nil) {
+         translateText: ((String, Configuration) async throws -> TranslationResult)? = nil) {
         self.captureSelection = captureSelection
         self.translateText = translateText
         translationHistory = TranslationHistoryModel(file: historyFile)
@@ -174,10 +174,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         let config = configuration
         task = Task { @MainActor in
             var recordTranslation = ""
+            var recordNotes: [TranslationNote] = []
             var recordOutcome: TranslationRecordStatus = .failed
             var recordDetail = "翻译未完成。"
             defer {
-                translationHistory.finish(id: id, translation: recordTranslation,
+                translationHistory.finish(id: id, translation: recordTranslation, notes: recordNotes,
                     status: Task.isCancelled ? .cancelled : recordOutcome,
                     detail: Task.isCancelled ? "本次翻译已取消。" : recordDetail)
             }
@@ -228,15 +229,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
                     self.overlay.progress(title: "仍在翻译…", detail: self.interaction.canReplace(id) ? "Agent 正在响应，可继续编辑或取消。" : "不会自动替换，完成后可复制译文。")
                 }
                 updateMenu()
-                let translated: String
-                if let translateText { translated = try await translateText(snapshot.source, config) }
-                else { translated = try await agentClient.translate(snapshot.source, configuration: config) }
+                let result: TranslationResult
+                if let translateText { result = try await translateText(snapshot.source, config) }
+                else { result = try await agentClient.translate(snapshot.source, configuration: config) }
                 try Task.checkCancellation()
                 guard interaction.owns(id) else { return }
                 slowTask?.cancel(); slowTask = nil
+                let translated = result.translation
                 lastSource = snapshot.source
                 lastTranslation = translated
-                recordTranslation = translated; recordOutcome = .retained
+                recordTranslation = translated; recordNotes = result.notes; recordOutcome = .retained
                 let replacementText = config.replacementStyle.replacement(source: snapshot.source, translation: translated)
                 if useClipboard {
                     do {
@@ -414,13 +416,14 @@ enum ShurufaApp {
             return
         }
         if CommandLine.arguments.contains("--smoke") {
-            let args = CommandLine.arguments
+            let args = CommandLine.arguments.filter { $0 != "--notes" }
             let index = args.firstIndex(of: "--smoke")!
             let backend = index + 1 < args.count ? Backend(rawValue: args[index + 1]) : .codex
-            guard let backend else { print("用法：--smoke codex|claude|pi"); exit(1) }
+            guard let backend else { print("用法：--smoke codex|claude|pi [模型] [原文…] [--notes]"); exit(1) }
             let agent = NativeAgent()
             defer { agent.close() }
             var config = Configuration.load(); config.backend = backend
+            config.notes = CommandLine.arguments.contains("--notes")
             if index + 2 < args.count { config.models[backend.rawValue] = args[index + 2] }
             var pid: Int32?
             do {
@@ -430,7 +433,7 @@ enum ShurufaApp {
                     let output = try await agent.translate(source, configuration: config)
                     if let pid, pid != agent.processIdentifier { throw TranslationError.message("Agent 进程未复用。") }
                     pid = agent.processIdentifier
-                    let result: [String: Any] = ["backend": backend.rawValue, "source": source, "translation": output, "seconds": Date().timeIntervalSince(start), "pid": pid ?? 0, "executable": agent.executablePath ?? ""]
+                    let result: [String: Any] = ["backend": backend.rawValue, "source": source, "translation": output.translation, "notes": output.notes.count, "noteTerms": output.notes.map(\.term), "seconds": Date().timeIntervalSince(start), "pid": pid ?? 0, "executable": agent.executablePath ?? ""]
                     let data = try JSONSerialization.data(withJSONObject: result, options: .sortedKeys)
                     print(String(decoding: data, as: UTF8.self))
                 }
@@ -537,7 +540,7 @@ enum ShurufaApp {
         checks["readOnlyNeverAuthorizesClipboardReplacement"] = !SelectionAccess.clipboardTargetUnchanged(readOnlySnapshot)
         let readOnlyDelegate = AppDelegate(historyFile: nil, captureSelection: { readOnlySnapshot }, translateText: { _, _ in
             translatedCount += 1
-            return "Read-only chat message"
+            return TranslationResult(translation: "Read-only chat message")
         })
         checks["readOnlyShortcutShowsNewestResult"] = await readOnlyDelegate.checkReadOnlyShortcut() && translatedCount == 1
         let settings = SettingsPanel(contentRect: NSRect(x: 0, y: 0, width: 760, height: 640), styleMask: [.borderless], backing: .buffered, defer: false)

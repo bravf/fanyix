@@ -28,7 +28,11 @@ enum UIPreview {
         try await save(TranslationOverlayView(model: overlay), size: overlay.displaySize, to: directory.appendingPathComponent("history-empty.png"))
         let now = Date()
         let records = [
-            TranslationRecord(createdAt: now, source: "我今天可能会晚点到。我们可以改到明天上午十点吗？", backend: .codex, model: "默认模型", translation: "I might be a little late today. Could we reschedule for ten tomorrow morning?", status: .retained, detail: "原文或选区已变化，未自动替换。译文已保留，可复制。", completedAt: now),
+            TranslationRecord(createdAt: now, source: "我今天可能会晚点到。我们可以改到明天上午十点吗？", backend: .codex, model: "默认模型", translation: "I might be a little late today. Could we reschedule for ten tomorrow morning?", notes: [
+                TranslationNote(term: "might be", kind: "情态动词", explain: "表示不确定的推测，比 will be 更委婉；这里是「可能会」。"),
+                TranslationNote(term: "a little", kind: "固定搭配", explain: "修饰形容词表示程度，相当于「有点」；a little late 即「有点晚」。"),
+                TranslationNote(term: "reschedule for", kind: "固定搭配", explain: "把安排改到某个时间，后接时间点；比 change to 更正式。")
+            ], status: .retained, detail: "原文或选区已变化，未自动替换。译文已保留，可复制。", completedAt: now),
             TranslationRecord(createdAt: now.addingTimeInterval(-900), source: "真冷呀", backend: .claude, model: "默认模型", translation: "It's so cold.", status: .pasted, detail: "已向微信粘贴翻译结果。", completedAt: now),
             TranslationRecord(createdAt: now.addingTimeInterval(-86_400), source: "收到，谢谢！", backend: .pi, model: "默认模型", translation: "Got it, thanks!", status: .replaced, completedAt: now)
         ]

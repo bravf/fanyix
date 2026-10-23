@@ -48,7 +48,11 @@ while let line = readLine() {
         if prompt.contains("__BAD_JSON__") { print("invalid-json"); fflush(stdout); continue }
         if prompt.contains("__EXIT__") { exit(3) }
         if prompt.contains("__HANG__") { reply(request, mode == "codex" ? ["turn": ["id": turnID]] : [:]); continue }
-        let text = prompt.contains("__EMPTY__") ? "" : prompt.contains("__MODEL__") ? selectedModel : prompt.contains("__SESSION__") ? String(thread) + "|" + String(turn) : "I might be a little late today. 🌏"
+        var text = "I might be a little late today. 🌏"
+        if prompt.contains("__EMPTY__") { text = "" }
+        else if prompt.contains("__MODEL__") { text = selectedModel }
+        else if prompt.contains("__SESSION__") { text = String(thread) + "|" + String(turn) }
+        else if prompt.contains("__NOTES__") { text = "```json\n{\"translation\":\"I might be a little late today.\",\"notes\":[{\"term\":\"might be\",\"type\":\"情态动词\",\"explain\":\"表示不确定的推测，比 will be 更委婉。\"},{\"term\":\"a little\",\"type\":\"固定搭配\",\"explain\":\"修饰形容词表示程度，相当于「有点」。\"}]}\n```" }
         if mode == "codex" {
             let id = params["threadId"] as? String ?? ""
             if turn > 1 {

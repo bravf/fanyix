@@ -20,8 +20,8 @@ cat > "$app/Contents/Info.plist" <<'PLIST'
   <key>CFBundleDisplayName</key><string>FanyiX</string>
   <key>CFBundleIconFile</key><string>FanyiX</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>0.5.18</string>
-  <key>CFBundleVersion</key><string>25</string>
+  <key>CFBundleShortVersionString</key><string>0.5.20</string>
+  <key>CFBundleVersion</key><string>27</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>LSUIElement</key><true/>
   <key>NSHighResolutionCapable</key><true/>

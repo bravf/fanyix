@@ -49,11 +49,19 @@ final class TranslationHistoryTests: XCTestCase {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
         let file = directory.appendingPathComponent("history.json")
-        let record = TranslationRecord(createdAt: Date(timeIntervalSince1970: 1_700_000_000), source: "你好 🌏\n明天见", backend: .pi, model: "provider/model", translation: "Hello 🌏\nSee you tomorrow.", status: .retained, detail: "选区已变化", completedAt: Date(timeIntervalSince1970: 1_700_000_001))
+        let notes = [TranslationNote(term: "might be", kind: "情态动词", explain: "表示不确定的推测。")]
+        let record = TranslationRecord(createdAt: Date(timeIntervalSince1970: 1_700_000_000), source: "你好 🌏\n明天见", backend: .pi, model: "provider/model", translation: "Hello 🌏\nSee you tomorrow.", notes: notes, status: .retained, detail: "选区已变化", completedAt: Date(timeIntervalSince1970: 1_700_000_001))
         try TranslationHistory(records: [record]).save(to: file)
         XCTAssertEqual(try TranslationHistory.load(from: file).records, [record])
         let permissions = try FileManager.default.attributesOfItem(atPath: file.path)[.posixPermissions] as? NSNumber
         XCTAssertEqual(permissions?.intValue, 0o600)
+    }
+    func testLegacyRecordWithoutNotesStillDecodes() throws {
+        let json = #"{"id":"1B4E28BA-2FA1-11D2-883F-0016D3CCA427","createdAt":0,"source":"旧记录","backend":"codex","model":"","translation":"Old","status":"retained","detail":""}"#
+        let decoder = JSONDecoder()
+        let record = try decoder.decode(TranslationRecord.self, from: Data(json.utf8))
+        XCTAssertEqual(record.translation, "Old")
+        XCTAssertTrue(record.notes.isEmpty)
     }
     func testNewestFirstAndRequestCompletionIsIsolated() {
         let old = TranslationRecord(createdAt: Date(timeIntervalSince1970: 1), source: "旧", backend: .claude, model: "")

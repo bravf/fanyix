@@ -23,8 +23,8 @@ final class NativeAgentTests: XCTestCase {
             let first = try await agent.translate("第一句", configuration: configuration(backend))
             let pid = try XCTUnwrap(agent.processIdentifier)
             let second = try await agent.translate("第二句", configuration: configuration(backend))
-            XCTAssertEqual(first, "I might be a little late today. 🌏")
-            XCTAssertEqual(second, first)
+            XCTAssertEqual(first.translation, "I might be a little late today. 🌏")
+            XCTAssertEqual(second.translation, first.translation)
             XCTAssertEqual(pid, agent.processIdentifier)
             XCTAssertEqual(agent.pendingCount, 0)
         }
@@ -38,11 +38,29 @@ final class NativeAgentTests: XCTestCase {
             let config = configuration(backend)
             let first = try await agent.translate("__SESSION__", configuration: config)
             let second = try await agent.translate("__SESSION__", configuration: config)
-            XCTAssertEqual(first, "1|1")
-            XCTAssertEqual(second, "1|2")
+            XCTAssertEqual(first.translation, "1|1")
+            XCTAssertEqual(second.translation, "1|2")
             agent.close()
             let restarted = try await agent.translate("__SESSION__", configuration: config)
-            XCTAssertEqual(restarted, "1|1")
+            XCTAssertEqual(restarted.translation, "1|1")
+        }
+    }
+
+    @MainActor
+    func testNotesModeParsesAnnotationsAndPlainModeStaysText() async throws {
+        for backend in Backend.allCases {
+            let agent = NativeAgent(launchOverride: AgentLaunch(executable: try fixture(), arguments: [backend.rawValue]))
+            defer { agent.close() }
+            var config = configuration(backend)
+            config.notes = true
+            let annotated = try await agent.translate("__NOTES__", configuration: config)
+            XCTAssertEqual(annotated.translation, "I might be a little late today.")
+            XCTAssertEqual(annotated.notes.count, 2)
+            XCTAssertEqual(annotated.notes.first?.term, "might be")
+            XCTAssertEqual(annotated.notes.first?.kind, "情态动词")
+            let plain = try await agent.translate("第一句", configuration: config)
+            XCTAssertEqual(plain.translation, "I might be a little late today. 🌏")
+            XCTAssertTrue(plain.notes.isEmpty)
         }
     }
 
@@ -55,7 +73,7 @@ final class NativeAgentTests: XCTestCase {
             _ = try await agent.translate("__SESSION__", configuration: config)
             config.models[backend.rawValue] = backend == .pi ? "fixture/other" : "other"
             let output = try await agent.translate("__SESSION__", configuration: config)
-            XCTAssertEqual(output, "1|1")
+            XCTAssertEqual(output.translation, "1|1")
         }
     }
 
@@ -98,7 +116,7 @@ final class NativeAgentTests: XCTestCase {
             let edited = try String(contentsOf: rules, encoding: .utf8) + "\nUser-edited rule.\n"
             try edited.write(to: rules, atomically: true, encoding: .utf8)
             let output = try await agent.translate("__SESSION__", configuration: config)
-            XCTAssertEqual(output, "1|1")
+            XCTAssertEqual(output.translation, "1|1")
             XCTAssertEqual(try String(contentsOf: rules, encoding: .utf8), edited)
         }
     }
@@ -113,7 +131,7 @@ final class NativeAgentTests: XCTestCase {
                 catch { XCTAssertFalse(error.localizedDescription.isEmpty) }
                 XCTAssertEqual(agent.pendingCount, 0)
                 let output = try await agent.translate("重试", configuration: configuration(backend))
-                XCTAssertTrue(output.contains("late"))
+                XCTAssertTrue(output.translation.contains("late"))
             }
         }
     }
@@ -130,7 +148,7 @@ final class NativeAgentTests: XCTestCase {
             do { _ = try await pending.value; XCTFail("应取消") } catch { XCTAssertTrue(error is CancellationError) }
             XCTAssertEqual(agent.pendingCount, 0)
             let result = try await agent.translate("再次翻译", configuration: config)
-            XCTAssertTrue(result.contains("late"))
+            XCTAssertTrue(result.translation.contains("late"))
         }
     }
 
@@ -147,7 +165,7 @@ final class NativeAgentTests: XCTestCase {
                 do { _ = try await pending.value; XCTFail("应取消") } catch { XCTAssertTrue(error is CancellationError, "\(backend) 第 \(iteration) 次取消：\(error)") }
                 do {
                     let result = try await agent.translate("新选区", configuration: config)
-                    XCTAssertTrue(result.contains("late"), "\(backend) 第 \(iteration) 次结果：\(result)")
+                    XCTAssertTrue(result.translation.contains("late"), "\(backend) 第 \(iteration) 次结果：\(result)")
                 } catch { XCTFail("\(backend) 第 \(iteration) 次新请求失败：\(error)"); return }
                 XCTAssertEqual(agent.pendingCount, 0)
             }
@@ -196,7 +214,7 @@ final class NativeAgentTests: XCTestCase {
             var config = configuration(backend)
             config.models[backend.rawValue] = backend == .pi ? "fixture/model/with-slash" : "fixture-large"
             let text = try await agent.translate("__MODEL__", configuration: config)
-            XCTAssertEqual(text, config.selectedModel)
+            XCTAssertEqual(text.translation, config.selectedModel)
         }
     }
 

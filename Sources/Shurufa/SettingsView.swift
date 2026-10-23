@@ -133,6 +133,13 @@ struct SettingsView: View {
                         model.saveSettings()
                     }.frame(width: 190)
                 }
+                SettingsDivider()
+                row("英文注释", subtitle: "开启后额外用中文解释英文单词、固定搭配与语法：原文是英文时解释原文，原文是中文时解释英文译文。注释只显示在历史详情中，默认关闭以减少耗时。") {
+                    Toggle("", isOn: Binding(
+                        get: { model.configuration.notes },
+                        set: { enabled in model.configuration.notes = enabled; model.saveSettings() }
+                    )).labelsHidden().toggleStyle(.switch).tint(AppTheme.green).accessibilityLabel("英文注释")
+                }
                 VStack(alignment: .leading, spacing: 7) {
                     Text("替换预览 · 选中「今天真冷」").font(.system(size: 10)).foregroundStyle(AppTheme.secondary)
                     Text(model.configuration.replacementStyle.replacement(source: "今天真冷", translation: "It's really cold today."))
@@ -256,7 +263,7 @@ struct SettingsView: View {
                 row("独立翻译规则", subtitle: "通过工作目录中的 AGENTS.md 配置，不写死在请求中。") { Button("打开规则文件…") { model.openTranslationRules() }.buttonStyle(QuietButtonStyle()) }
                 SettingsDivider()
                 VStack(alignment: .leading, spacing: 14) {
-                    ForEach(["每次只翻译当前选区，不续写上一句", "保留原文含义、语气、姓名与数字", "中文译英文、英文译中文，只输出译文"], id: \.self) { text in HStack(spacing: 10) { Image(systemName: "checkmark").foregroundStyle(AppTheme.green); Text(text) }.font(.system(size: 12)) }
+                    ForEach(["每次只翻译当前选区，不续写上一句", "保留原文含义、语气、姓名与数字", "中文译英文、英文译中文，只输出译文", "开启英文注释时，按 notes 请求解释英文语言点"], id: \.self) { text in HStack(spacing: 10) { Image(systemName: "checkmark").foregroundStyle(AppTheme.green); Text(text) }.font(.system(size: 12)) }
                     Text("以上为默认规则摘要，实际行为以你编辑后的文件为准。").font(.system(size: 11)).foregroundStyle(AppTheme.secondary)
                 }.padding(.vertical, 21)
             }

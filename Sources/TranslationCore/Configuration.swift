@@ -37,18 +37,20 @@ public struct Configuration: Codable {
     public var timeout: Double = 75
     public var shortcut: Int = 0
     public var replacementStyle: ReplacementStyle = .translationOnly
+    public var notes: Bool = false
     public var executablePaths: [String: String] = [:]
     public var models: [String: String] = [:]
     public var selectedModel: String { models[backend.rawValue] ?? "" }
     public init() {}
 
-    private enum CodingKeys: String, CodingKey { case backend, timeout, shortcut, replacementStyle, executablePaths, models }
+    private enum CodingKeys: String, CodingKey { case backend, timeout, shortcut, replacementStyle, notes, executablePaths, models }
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         backend = try values.decodeIfPresent(Backend.self, forKey: .backend) ?? .codex
         timeout = try values.decodeIfPresent(Double.self, forKey: .timeout) ?? 75
         shortcut = try values.decodeIfPresent(Int.self, forKey: .shortcut) ?? 0
         replacementStyle = try values.decodeIfPresent(ReplacementStyle.self, forKey: .replacementStyle) ?? .translationOnly
+        notes = try values.decodeIfPresent(Bool.self, forKey: .notes) ?? false
         executablePaths = try values.decodeIfPresent([String: String].self, forKey: .executablePaths) ?? [:]
         models = try values.decodeIfPresent([String: String].self, forKey: .models) ?? [:]
     }
@@ -77,14 +79,19 @@ public enum TranslationError: LocalizedError {
 }
 
 public enum TranslationPrompt {
-    public static func make(_ text: String) throws -> String {
+    private struct NotesRequest: Encodable { let text: String; let notes: Bool }
+
+    public static func make(_ text: String, notes: Bool = false) throws -> String {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw TranslationError.message("请先选中需要翻译的文字。")
         }
         guard text.utf8.count <= 32_000 else {
             throw TranslationError.message("选中文字太长，请分段翻译（每次不超过 32 KB）。")
         }
-        let data = try JSONEncoder().encode(text)
+        // 默认仍是纯 JSON 字符串，保持既有规则与行为；开启注释时才改用带 notes 的对象。
+        let data: Data
+        if notes { data = try JSONEncoder().encode(NotesRequest(text: text, notes: true)) }
+        else { data = try JSONEncoder().encode(text) }
         return String(decoding: data, as: UTF8.self)
     }
 }

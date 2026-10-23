@@ -12,9 +12,21 @@
 		<data>
 		XQjwomFtXNp+aYSydnPQx5rg9Kc=
 		</data>
-		<key>Resources/Shurufa_TranslationCore.bundle/AGENTS.md</key>
+		<key>Resources/Shurufa_TranslationCore.bundle/AGENTS-v1b.md</key>
+		<data>
+		Wj+JASkOcSAe2ceS1bqfwhbCsiQ=
+		</data>
+		<key>Resources/Shurufa_TranslationCore.bundle/AGENTS-v2.md</key>
 		<data>
 		FzgAP+/7mj7FqPlc6YmI4iIXa/M=
+		</data>
+		<key>Resources/Shurufa_TranslationCore.bundle/AGENTS-v3.md</key>
+		<data>
+		H0rf+L+m9PdTVzAAB+SxXe1XWB0=
+		</data>
+		<key>Resources/Shurufa_TranslationCore.bundle/AGENTS.md</key>
+		<data>
+		z38rw8iRlIkHcBwkQ0NWrTsVb5U=
 		</data>
 	</dict>
 	<key>files2</key>
@@ -33,11 +45,32 @@
 			h2FXX+souNc/ovdElVwLsnMKtyK5t2NxCx/EcjeYdFE=
 			</data>
 		</dict>
-		<key>Resources/Shurufa_TranslationCore.bundle/AGENTS.md</key>
+		<key>Resources/Shurufa_TranslationCore.bundle/AGENTS-v1b.md</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			Upr9d0BaaZNE/efaTenkVlzeptVndejGBZnUNdfZwDg=
+			</data>
+		</dict>
+		<key>Resources/Shurufa_TranslationCore.bundle/AGENTS-v2.md</key>
 		<dict>
 			<key>hash2</key>
 			<data>
 			xv5ozELSR92BZe/bJFVTPseoPdVkzkTsO0qLOSpDlIY=
+			</data>
+		</dict>
+		<key>Resources/Shurufa_TranslationCore.bundle/AGENTS-v3.md</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			Wf30qwp4y9cBX++umCD7n2/WM1c5FfDZgKtz74O8tRg=
+			</data>
+		</dict>
+		<key>Resources/Shurufa_TranslationCore.bundle/AGENTS.md</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			IU+a2qnZvrmI/0+7flzaWCfdpMHsOm5Lh0EBMLcBkIE=
 			</data>
 		</dict>
 	</dict>

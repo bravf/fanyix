@@ -21,8 +21,8 @@ public final class NativeAgent {
         self.launchOverride = launchOverride; self.workspaceDirectory = workspaceDirectory
     }
 
-    public func translate(_ source: String, configuration: Configuration) async throws -> String {
-        let prompt = try TranslationPrompt.make(source)
+    public func translate(_ source: String, configuration: Configuration) async throws -> TranslationResult {
+        let prompt = try TranslationPrompt.make(source, notes: configuration.notes)
         return try await perform(configuration: configuration) { wire in
             wire.discardEvents()
             let output: String
@@ -34,7 +34,11 @@ public final class NativeAgent {
             try Task.checkCancellation()
             guard !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw TranslationError.message("Agent 返回空译文，原文已保留。") }
             guard output.utf8.count <= 128_000 else { throw TranslationError.message("Agent 译文过长，原文已保留。") }
-            return output.trimmingCharacters(in: .whitespacesAndNewlines)
+            // 关闭注释时完全不解析 JSON，保持默认行为不变；格式异常时降级为纯译文。
+            let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
+            let result = configuration.notes ? TranslationResponse.parse(trimmed) : TranslationResult(translation: trimmed)
+            guard !result.translation.isEmpty else { throw TranslationError.message("Agent 返回空译文，原文已保留。") }
+            return result
         }
     }
 

@@ -297,6 +297,10 @@ struct TranslationOverlayView: View {
                     SettingsDivider()
                     if !record.translation.isEmpty { textSection("译文", text: record.translation, prominent: true) }
                     else { Text(record.status == .translating ? "Agent 正在翻译…" : "本次未生成译文").font(.system(size: 13)).foregroundStyle(AppTheme.secondary) }
+                    if !englishNotes(record.notes).isEmpty {
+                        SettingsDivider()
+                        notesSection(englishNotes(record.notes))
+                    }
                     if !record.detail.isEmpty { Text(record.detail).font(.system(size: 11)).foregroundStyle(AppTheme.secondary).fixedSize(horizontal: false, vertical: true) }
                 }.padding(16).id(record.id)
             }.id(record.id).frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -319,6 +323,36 @@ struct TranslationOverlayView: View {
                 Button("复制" + title) { model.copyText(text) }.buttonStyle(QuietButtonStyle(prominent: prominent))
             }
             Text(text).font(.system(size: 14)).lineSpacing(4).fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+    private func englishNotes(_ notes: [TranslationNote]) -> [TranslationNote] {
+        notes.filter(\.isEnglish)
+    }
+    private func notesSection(_ notes: [TranslationNote]) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(spacing: 6) {
+                Text("英文注释").font(.system(size: 11)).foregroundStyle(AppTheme.secondary)
+                Text(String(notes.count)).font(.system(size: 9, weight: .medium)).foregroundStyle(AppTheme.secondary)
+                    .padding(.horizontal, 5).padding(.vertical, 1).background(AppTheme.canvas, in: Capsule())
+                Spacer()
+            }
+            ForEach(notes) { note in
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(alignment: .firstTextBaseline, spacing: 7) {
+                        Text(note.term).font(.system(size: 12, weight: .medium)).textSelection(.enabled)
+                        if !note.kind.isEmpty {
+                            Text(note.kind).font(.system(size: 9, weight: .medium)).foregroundStyle(AppTheme.green)
+                                .padding(.horizontal, 6).padding(.vertical, 2).background(AppTheme.green.opacity(0.10), in: Capsule())
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    if !note.explain.isEmpty {
+                        Text(note.explain).font(.system(size: 11)).foregroundStyle(AppTheme.secondary)
+                            .lineSpacing(2).fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }.padding(10).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(AppTheme.canvas, in: RoundedRectangle(cornerRadius: 7))
+            }
         }
     }
     private var footer: some View {

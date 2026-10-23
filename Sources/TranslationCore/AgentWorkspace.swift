@@ -17,11 +17,17 @@ public enum AgentWorkspace {
         }
         if !manager.fileExists(atPath: file.path) {
             try manager.copyItem(at: template, to: file)
-        } else if let legacy = resources.url(forResource: "AGENTS-v1", withExtension: "md"),
-                  try Data(contentsOf: file) == Data(contentsOf: legacy) {
-            let backup = directory.appendingPathComponent("AGENTS.md.v1.bak")
-            if !manager.fileExists(atPath: backup.path) { try manager.copyItem(at: file, to: backup) }
-            try Data(contentsOf: template).write(to: file, options: .atomic)
+        } else {
+            // 仅自动升级逐字匹配的旧版默认规则；用户改过的文件保持原样。
+            let legacyVersions = ["AGENTS-v1", "AGENTS-v1b", "AGENTS-v2", "AGENTS-v3"]
+            for version in legacyVersions {
+                guard let legacy = resources.url(forResource: version, withExtension: "md"),
+                      try Data(contentsOf: file) == Data(contentsOf: legacy) else { continue }
+                let backup = directory.appendingPathComponent("AGENTS.md." + version.dropFirst("AGENTS-".count) + ".bak")
+                if !manager.fileExists(atPath: backup.path) { try manager.copyItem(at: file, to: backup) }
+                try Data(contentsOf: template).write(to: file, options: .atomic)
+                break
+            }
         }
         let bridge = directory.appendingPathComponent("CLAUDE.md")
         if !manager.fileExists(atPath: bridge.path) {
